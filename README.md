@@ -23,7 +23,7 @@ tsc --init
 ### 2、配置TSLint
 >1、全局安装：`npm install tslint -g`   
 >Tips：初始化`tslint -i` =>`tslint.json` 
-```json
+```js
 //初始化
 tslint -i
 //tslint.json
