@@ -17,7 +17,7 @@ npm init -y
 ```
 tsc --init
 ```  
->2、局部安装：`npm i typescript`   
+>2、局部安装：`npm i typescript -D`   
 >Tips：局部安装是为了配合webpack进行使用
 
 ### 2、配置TSLint
@@ -102,7 +102,7 @@ module.exports = {
 };
 ```
 
-#### 3.2、`package.json`配置
+#### 3.3、`package.json`配置
 ```json
 {
   "scripts": {
@@ -110,4 +110,184 @@ module.exports = {
     "build": "cross-env NODE_ENV=production webpack --mode=production --progress"
   }
 }
+```
+
+## TS基础知识
+***
+### 1、八个常见类型
+#### 1.1、布尔类型(`boolean`)
+>布尔类型的变量的值只能是 true 或 false  
+```ts
+let bool: boolean = false;
+bool = true;
+bool = 123; // error 不能将类型"123"分配给类型"boolean"
+```
+
+#### 1.2、数值类型(`number`)
+>1、数字都是浮点数，只有一个number类型，而没有int或者float类型  
+>2、TypeScript 中共支持二、八、十和十六四种进制的数值  
+```ts
+let num: number;
+num = 123;
+num = "123"; // error 不能将类型"123"分配给类型"number"
+num = 0b1111011; //  二进制的123
+num = 0o173; // 八进制的123
+num = 0x7b; // 十六进制的123
+```
+
+#### 1.3、字符串类型(`string`) 
+```ts
+let str: string = "Joannes";
+str = "Xie";
+const first = "Joannes";
+const last = "Xie";
+str = `${first} ${last}`;
+console.log(str) // 打印结果为:Joannes Xie
+```
+>1、字符串字面量类型，即把一个字符串字面量作为一种类型  
+>2、当你把一个变量指定为这个字符串类型的时候，就不能再赋值为其他字符串值了  
+```ts
+let str: 
+str = "haha" // error 不能将类型“"haha"”分配给类型“"Joannes"”
+``` 
+
+#### 1.4、数组类型(`string`) 
+>1、数组定义的两种方法  
+```ts
+let list1: number[] = [1, 2, 3]; //推荐
+let list2: Array<number> = [1, 2, 3];
+```
+>2、数组中多个类型 `number|string[]`
+
+
+#### 1.5、null 和 undefined
+```ts
+let n: null = null; 
+let u: undefined = undefined;
+//undefined可能tslint报错，不能给一个值设置undefined，其实是可以的。
+//可以配置tslint，将"no-unnecessary-initializer"设为false即可
+```
+
+#### 1.6、object
+>1、当我们希望一个变量或者函数的参数的类型是一个对象的时候，使用这个类型
+```ts
+let obj: object
+obj = { name: 'Lison' }
+obj = 123 // error 不能将类型“123”分配给类型“object”
+console.log(obj.name) // error 类型“object”上不存在属性“name”
+//需要使用到 接口 
+```
+
+#### 1.7、symbol
+>Symbol 是 ES6 加入的新的基础数据类型，因为它的知识比较多，所以我们单独在后面的一节进行讲解。
+
+### 2、TS补充的六个类型
+#### 2.1、元组
+>1、元组可以看做是数组的拓展，它表示已知元素数量和类型的数组  
+>Tips：各个位置上的元素类型都要对应，元素个数也要一致
+```ts
+let tuple: [string, number, boolean];
+tuple = ["a", 2, false];
+tuple = [2, "a", false]; // error 不能将类型“number”分配给类型“string”。 不能将类型“string”分配给类型“number”。
+tuple = ["a", 2]; // error Property '2' is missing in type '[string, number]' but required in type '[string, number, boolean]'
+```
+
+#### 2.2、枚举(enum)
+```ts
+enum Roles {
+  SUPER_ADMIN,
+  ADMIN,
+  USER
+}
+```
+>上面定义的枚举类型 Roles 里面有三个值，TypeScript 会为它们每个值分配编号，默认从 0 开始，依次排列
+```ts
+enum Roles {
+  SUPER_ADMIN = 0,
+  ADMIN = 1,
+  USER = 2
+}
+```
+>当我们使用的时候，就可以使用名字而不需要记数字和名称的对照关系
+```ts
+const superAdmin = Roles.SUPER_ADMIN;
+console.log(superAdmin); // 0
+console.log(Roles[1]); // 'ADMIN'
+```
+>单独对每个值赋值，没有赋值的值将会从上一个数后延续
+```ts
+enum Roles {
+  SUPER_ADMIN = 1, //1
+  ADMIN, //2
+  USER = 7, //7
+  hh, //8
+}
+```
+
+#### 2.3、任意类型(any)
+>可以是任意的类型
+```ts
+let value: any;
+value = 123;
+value = "abc";
+value = false;
+const array: any[] = [1, "a", true];
+```
+
+#### 2.4、非任意类型(void)
+>void 和 any 相反，void 是表示没有任意类型，就是什么类型都不是  
+>void 类型的变量只能赋值为 undefined 和 null，其他类型不能赋值给 void 类型的变量。
+```ts
+//这个函数没有返回任何的值，所以它的返回类型为 void
+const consoleText = (text: string): void => {
+  console.log(text);
+};
+```
+
+#### 2.5、永不存在的值(never)
+>1、never 类型指那些永不存在的值的类型  
+>2、那些总会抛出异常或根本不会有返回值的函数表达式的返回值类型
+>3、当变量被永不为真的类型保护所约束时，该变量也是 never 类型  
+```ts
+//此函数的返回值是永不存在的，因为它一直抛出错误，用never表示它的返回值
+const errorFunc = (message: string): never => {
+  throw new Error(message);
+};
+```
+>1、never类型是`任何类型`的`子类型`，所以它可以赋值给任何类型  
+>2、`没有类型`是 never 的`子类型`，所以除了它自身没有任何类型可以赋值给 never 类型  
+>3、any 类型也不能赋值给 never 类型
+
+#### 2.6、未知的类型(unknown)
+>当值为unknown类型的时，如果没有通过基于控制流的类型断言来缩小范围的话，是不能对它进行任何操作的
+
+#### 2.7、交叉类型(高级类型)
+>交叉类型就是取多个类型的并集，使用 `&` 符号定义  
+>被&符链接的多个类型构成一个交叉类型，表示这个类型同时具备这几个连接起来的类型的特点
+```ts
+const merge = <T, U>(arg1: T, arg2: U): T & U => {
+  let res = {} as T & U; // 这里指定返回值的类型兼备T和U两个类型变量代表的类型的特点
+  res = Object.assign(arg1, arg2);
+  return res;
+};
+const info1 = {
+  name: "lison"
+};
+const info2 = {
+  age: 18
+};
+const lisonInfo = merge(info1, info2);
+
+console.log(lisonInfo.address); // error 类型“{ name: string; } & { age: number; }”上不存在属性“address”
+```
+
+#### 2.8、联合类型(高级类型)
+> 只要符合联合类型中任意一种类型即可，它使用 `|` 符号定义
+```ts
+const getLength = (content: string | number): number => {
+  if (typeof content === "string") return content.length;
+  else return content.toString().length;
+};
+console.log(getLength("abc")); // 3
+console.log(getLength(123)); // 3
 ```
