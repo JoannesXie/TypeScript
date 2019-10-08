@@ -2,7 +2,7 @@
 学习TypeScript
 
 ## TS初始化
-***
+
 ### 1、项目初始化
 #### 1.1、npm 初始化
 >1、使用`npm`默认`package.json`配置  
@@ -113,7 +113,7 @@ module.exports = {
 ```
 
 ## TS基础知识
-***
+
 ### 1、八个常见类型
 #### 1.1、布尔类型(`boolean`)
 >布尔类型的变量的值只能是 true 或 false  
@@ -147,7 +147,7 @@ console.log(str) // 打印结果为:Joannes Xie
 >1、字符串字面量类型，即把一个字符串字面量作为一种类型  
 >2、当你把一个变量指定为这个字符串类型的时候，就不能再赋值为其他字符串值了  
 ```ts
-let str: 
+let str: Joannes
 str = "haha" // error 不能将类型“"haha"”分配给类型“"Joannes"”
 ``` 
 
