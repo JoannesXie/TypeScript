@@ -1,0 +1,29 @@
+{
+  "name": "ts",
+  "version": "1.0.0",
+  "description": "学习TypeScript",
+  "main": "index.ts",
+  "keywords": [],
+  "author": "Joannesxie",
+  "license": "ISC",
+  "scripts": {
+    "start": "cross-env NODE_ENV=development webpack-dev-server --mode=development --progress --color",
+    "build": "cross-env NODE_ENV=production webpack --mode=production --progress --color"
+  },
+  "bugs": {
+    "url": "https://github.com/JoannesXie/TypeScript/issues"
+  },
+  "homepage": "https://github.com/JoannesXie/TypeScript#readme",
+  "dependencies": {
+    "typescript": "^3.6.3"
+  },
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "cross-env": "^6.0.3",
+    "html-webpack-plugin": "^3.2.0",
+    "ts-loader": "^6.2.0",
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.2"
+  }
+}
