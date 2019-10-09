@@ -151,13 +151,16 @@ let str: Joannes
 str = "haha" // error 不能将类型“"haha"”分配给类型“"Joannes"”
 ``` 
 
-#### 1.4、数组类型(`string`) 
->1、数组定义的两种方法  
+#### 1.4、数组类型(`Array`) 
+>1、数组单个类型定义 
 ```ts
 let list1: number[] = [1, 2, 3]; //推荐
 let list2: Array<number> = [1, 2, 3];
 ```
->2、数组中多个类型 `number|string[]`
+>2、数组中多个类型 `number|string`
+```ts
+let list3: Array<number | string> = [1, 2, "3"];
+```
 
 
 #### 1.5、null 和 undefined
@@ -169,7 +172,7 @@ let u: undefined = undefined;
 ```
 
 #### 1.6、object
->1、当我们希望一个变量或者函数的参数的类型是一个对象的时候，使用这个类型
+>1、当一个变量或者函数的参数的类型是一个对象的时
 ```ts
 let obj: object
 obj = { name: 'Lison' }
@@ -179,7 +182,8 @@ console.log(obj.name) // error 类型“object”上不存在属性“name”
 ```
 
 #### 1.7、symbol
->Symbol 是 ES6 加入的新的基础数据类型，因为它的知识比较多，所以我们单独在后面的一节进行讲解。
+>1、[点击跳转到Symbol](#Symbol-ES6新基础类型)  
+>2、因为它的知识比较多，所以单独进行讲解。
 
 ### 2、TS补充的六个类型
 #### 2.1、元组
@@ -291,3 +295,5 @@ const getLength = (content: string | number): number => {
 console.log(getLength("abc")); // 3
 console.log(getLength(123)); // 3
 ```
+
+### Symbol-ES6新基础类型
