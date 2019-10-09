@@ -28,4 +28,3 @@ const info2 = {
 const lisonInfo = merge(info1, info2);
 console.log(lisonInfo.age);
 let list1: Array<number | string> = [1, 2, "3"];
-
