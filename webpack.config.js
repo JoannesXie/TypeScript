@@ -42,7 +42,8 @@ module.exports = {
     }),
     // 这里我们指定编译需要用模板，模板文件是./src/template/index.html，所以接下来我们要创建一个index.html文件
     new HtmlWebpackPlugin({
-      template: "./src/template/index.html"
+      template: "./src/template/index.html",
+      favicon: "./favicon.ico", //生成一个icon图标
     })
   ]
 };
