@@ -182,7 +182,7 @@ console.log(obj.name) // error 类型“object”上不存在属性“name”
 ```
 
 #### 1.7、symbol
->1、[点击跳转到Symbol](#3、Symbol-ES6新基础类型)  
+>1、[点击跳转到Symbol](#3symbol-es6新基础类型)  
 >2、因为它的知识比较多，所以单独进行讲解。
 
 ### 2、TS补充的六个类型
@@ -197,7 +197,7 @@ tuple = ["a", 2]; // error Property '2' is missing in type '[string, number]' bu
 ```
 
 #### 2.2、枚举(enum)
->[跳转到`枚举详解`](#4、枚举详解)
+>[跳转到`枚举详解`](#4枚举详解)
 ```ts
 enum Roles {
   SUPER_ADMIN,
