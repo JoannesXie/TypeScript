@@ -825,3 +825,366 @@ handleData(false); // error 类型"boolean"的参数不能赋给类型"number"�
 
 ### 8、泛型(Generics)
 >在定义函数、接口或类的时候，`不预先指定`具体的类型，而在使用的时候再指定类型的一种特性
+
+#### 8.1、基础用法
+>1、定义函数之前，使用`<>`符号定义了一个`泛型变量 T`  
+>2、在函数中`任何`需要指定类型的地方使用 T 都代表这一种类型 
+```ts
+//定义
+const getArray = <T>(value: T, times: number = 5): T[] => {
+  return new Array(times).fill(value);
+};
+//在调用 getArray时，在方法名后传入类型
+getArray<number[]>([1, 2], 3).forEach(item => {
+  console.log(item.length);
+});
+```
+
+#### 8.2、泛型变量
+>1、泛型变量调用时，不是`所有类型`都能做的操作不能做，不是所有类型都能调用的方法不能调用   
+```ts
+//多泛型变量 <T, U>
+const getArray = <T, U>(param1: T, param2: U, times: number): [T, U][] => {
+  return new Array(times).fill([param1, param2]);
+};
+```
+
+#### 8.3、泛型函数类型  
+```ts
+// 1:简单定义
+const getArray: <T>(arg: T, times: number) => T[] = (arg, times) => {
+  return new Array(times).fill(arg);
+};
+// 2:使用类型别名
+type GetArray = <T>(arg: T, times: number) => T[];
+const getArray2: GetArray = <T>(arg: T, times: number): T[] => {
+  return new Array(times).fill(arg);
+};
+// 3:使用接口
+interface GetArray {
+  <T>(arg: T, times: number): T[];
+}
+const getArray: GetArray = <T>(arg: T, times: number): T[] => {
+  return new Array(times).fill(arg);
+};
+```
+
+#### 8.4、泛型约束 
+>泛型约束就是使用`一个类型`和`extends`对泛型进行约束
+```ts
+interface ValueWithLength {
+  length: number;
+}
+const getLength = <T extends ValueWithLength>(param: T): number => {
+  return param.length;
+};
+getLength("abc"); // 3
+getLength([1, 2, 3]); // 3
+getLength({ length: 3 }); // 3
+getLength(123); // error 类型“123”的参数不能赋给类型“ValueWithLength”的参数
+```
+
+#### 8.5、在泛型约束中使用类型参数 
+>用索引类型`keyof`结合泛型,实现约束使用类型参数
+```ts
+//让K来继承索引类型keyof T
+const getProp = <T, K extends keyof T>(object: T, propName: K) => {
+  return object[propName];
+};
+const obj = { a: "aa", b: "bb" };
+getProp(obj, "c"); // 类型“"c"”的参数不能赋给类型“"a" | "b"”的参数
+```
+
+### 9、TS中的类(class)
+>[**阮一峰：《`ECMAScript 6 入门`》class详解**](http://es6.ruanyifeng.com/#docs/class)  
+>[**掘金：class基本概念**](https://juejin.im/post/5c02b106f265da61764aa0c1#heading-93)  
+
+#### 9.1、类的基础写法
+```ts
+class Point {
+  x: number,
+  y: number,
+  constructor(x: number, y: number){
+    this.x = x;
+    this.y = y;
+  }
+  getPoint(){
+    return `(${this.x}, ${this.y})`;
+  }
+}
+const point = new Point(1, 2);
+```
+
+#### 9.2、类的修饰符
+##### 9.2.1、public
+>公共，用来指定在创建实例后可以通过`实例访问`的，也就是类定义的外部可以访问的属性和方法
+```ts
+class Point {
+  public x: number;
+  public y: number;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+  public getPosition() {
+    return `(${this.x}, ${this.y})`;
+  }
+}
+const point = new Point(1, 2);
+console.log(point.x); // 1
+```
+
+##### 9.2.2、private
+>`private`修饰符表示私有的，它修饰的属性在类的定义外面是没法访问的
+```ts
+class Parent {
+  private age: number;
+  constructor(age: number) {
+    this.age = age;
+  }
+}
+const p = new Parent(18);
+console.log(p); // { age: 18 }
+console.log(p.age); // error 属性“age”为私有属性，只能在类“Parent”中访问
+console.log(Parent.age); // error 类型“typeof ParentA”上不存在属性“age”
+class Child extends Parent {
+  constructor(age: number) {
+    super(age);
+    console.log(super.age); // 通过 "super" 关键字只能访问基类的公共方法和受保护方法
+  }
+}
+```
+
+##### 9.2.3、protected
+>1、`protected`受保护修饰符，和private有些相似，但protected修饰的成员在继承该类的子类中可以访问
+```ts
+class Parent {
+  protected age: number;
+  constructor(age: number) {
+    this.age = age;
+  }
+  protected getAge() {
+    return this.age;
+  }
+}
+const p = new Parent(18);
+console.log(p.age); // error 属性“age”为私有属性，只能在类“ParentA”中访问
+console.log(Parent.age); // error 类型“typeof ParentA”上不存在属性“age”
+class Child extends Parent {
+  constructor(age: number) {
+    super(age);
+    console.log(super.age); // undefined
+    console.log(super.getAge());
+  }
+}
+new Child(18)
+```
+>2、修饰 constructor 构造函数，加了protected修饰符之后，这个类就`不能再用来创建实例`，只能被子类`继承`
+```ts
+class Parent {
+  protected constructor() {
+    //do something
+  }
+}
+const p = new Parent(); // error 类“Parent”的构造函数是受保护的，仅可在类声明中访问
+class Child extends Parent {
+  constructor() {
+    super();
+  }
+}
+const c = new Child();
+```
+
+#### 9.3、readonly
+>`只读`修饰符
+```ts
+class UserInfo {
+  readonly name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
+}
+const user = new UserInfo("Lison");
+user.name = "haha"; // error Cannot assign to 'name' because it is a read-only property
+```
+
+#### 9.4、参数属性
+>在 constructor 构造函数的参数前面加上访问`限定符`(public、private、protected 或readonly)
+```ts
+class A {
+  constructor(name: string) {}
+}
+const a = new A("aaa");
+console.log(a.name); // error 类型“A”上不存在属性“name”
+class B {
+  constructor(public name: string) {}
+}
+const b = new B("bbb");
+console.log(b.name); // "bbb"
+```
+
+#### 9.5、静态属性(static)
+>1、指定属性或方法是静态的，实例将不会添加这个静态属性，也不会继承这个静态方法  
+>2、使用修饰符和 static 关键字来指定一个属性或方法
+```ts
+class Parent {
+  public static age: number = 18;
+  public static getAge() {
+    return Parent.age;
+  }
+  constructor() {
+    //
+  }
+}
+const p = new Parent();
+console.log(p.age); // error Property 'age' is a static member of type 'Parent'
+console.log(Parent.age); // 18
+```
+
+#### 9.6、可选类属性
+>使用 `?`标识
+```ts
+class Info {
+  name: string;
+  age?: number;
+  constructor(name: string, age?: number, public sex?: string) {
+    this.name = name;
+    this.age = age;
+  }
+}
+const info1 = new Info("lison");
+const info2 = new Info("lison", 18);
+const info3 = new Info("lison", 18, "man");
+```
+
+#### 9.7、存取器
+>1、在设置属性值的时候调用的函数 `set fn(){...}`   
+>2、在访问属性值的时候调用的函数 `get fn(){...}`  
+```ts
+class UserInfo {
+  private _fullName: string;
+  constructor() {}
+  get fullName() {
+    return this._fullName;
+  }
+  set fullName(value) {
+    console.log(`setter: ${value}`);
+    this._fullName = value;
+  }
+}
+const user = new UserInfo();
+user.fullName = "Lison Li"; // "setter: Lison Li"
+console.log(user.fullName); // "Lison Li"
+```
+
+#### 9.8、抽象类(`abstract`)
+>1、抽象类一般用来被其他类继承，而不`直接用它创建实例` 
+```ts
+abstract class People {
+  constructor(public name: string) {}
+  abstract printName(): void;
+}
+class Man extends People {
+  constructor(name: string) {
+    super(name);
+    this.name = name;
+  }
+  printName() {
+    console.log(this.name);
+  }
+}
+const m = new Man(); // error 应有 1 个参数，但获得 0 个
+const man = new Man("lison");
+man.printName(); // 'lison'
+const p = new People("lison"); // error 无法创建抽象类的实例
+```   
+>2、标记类中定义的属性和存取器,抽象方法和抽象存取器都不能包含实际的代码块
+```ts
+abstract class People {
+  abstract _name: string;
+  abstract get insideName(): string;
+  abstract set insideName(value: string);
+}
+class Pp extends People {
+  _name: string;
+  insideName: string;
+}
+```  
+>3、抽象类里定义的抽象方法，在子类中是不会继承的，所以在子类中必须实现该方法的定义  
+```ts
+abstract class People {
+  constructor(public name: string) {}
+  abstract printName(): void;
+}
+class Man extends People {
+  // error 非抽象类“Man”不会实现继承自“People”类的抽象成员"printName"
+  constructor(name: string) {
+    super(name);
+    this.name = name;
+  }
+}
+const m = new Man("lison");
+m.printName(); // error m.printName is not a function
+```
+
+#### 9.9、类类型接口
+>1、`implements`指定一个`类要继承的接口`，如果是接口和接口、类和类直接的继承，使用extends
+```ts
+interface FoodInterface {
+  type: string;
+}
+class FoodClass implements FoodInterface {
+  // error Property 'type' is missing in type 'FoodClass' but required in type 'FoodInterface'
+  static type: string;
+  constructor() {}
+}
+```
+>`接口检测的是使用该接口定义的类创建的实例`，所以上面例子中虽然定义了静态属性 type，但静态属性不会添加到实例上
+```ts
+//可以这样写
+interface FoodInterface {
+  type: string;
+}
+class FoodClass implements FoodInterface {
+  constructor(public type: string) {}
+}
+```
+
+#### 9.10、接口继承类
+>1、接口可以继承一个类，当接口继承了该类后，会继承类的成员，但是不包括其实现，也就是只继承成员以及成员类型  
+>2、接口还会继承类的`private`和`protected`修饰的成员，当接口继承的这个类中包含这两个修饰符修饰的成员时，这个接口只可被这个类或他的子类实现
+```ts
+class A {
+  protected name: string;
+}
+interface I extends A {}
+class B implements I {} // error Property 'name' is missing in type 'B' but required in type 'I'
+class C implements I {
+  // error 属性“name”受保护，但类型“C”并不是从“A”派生的类
+  name: string;
+}
+class D extends A implements I {
+  getName() {
+    return this.name;
+  }
+}
+```
+#### 9.11、在泛型中使用类类型
+```ts
+const create = <T>(c: { new (): T }): T => {
+  return new c();
+};
+class Info {
+  age: number;
+}
+create(Info).age;
+create(Info).name; // error 类型“Info”上不存在属性“name”
+```
+>1、创建了一个一个 create 函数，传入的参数是一个类，返回的是一个类创建的实例  
+>2、参数 c 的类型定义中，new()代表调用类的构造函数，他的类型也就是类创建实例后的实例的类型  
+>3、return new c()这里使用传进来的类 c 创建一个实例并返回，返回的实例类型也就是函数的返回值类型 
+
+## TS进阶部分
+
+### 1、类型推论
+#### 1.1、多类型联合
