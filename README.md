@@ -1187,4 +1187,311 @@ create(Info).name; // error 类型“Info”上不存在属性“name”
 ## TS进阶部分
 
 ### 1、类型推论
+> 在一些定义中如果你没有明确指定类型，编译器会自动推断出适合的类型
 #### 1.1、多类型联合
+> 定义一个数组或元组这种包含多个不同类型元素的值的时，TypeScript 会将多个类型合并起来，组成一个联合类型
+```ts
+let arr = [1, "a"];
+arr = ["b", 2, false]; // error 不能将类型“false”分配给类型“string | number”
+
+let value = Math.random() * 10 > 5 ? 'abc' : 123
+value = false // error 不能将类型“false”分配给类型“string | number”
+```
+
+#### 1.2、上下文类型
+> 它是根据左侧的类型推断右侧的一些类型
+```ts
+window.onmousedown = function(mouseEvent) {
+  console.log(mouseEvent.a); // error 类型“MouseEvent”上不存在属性“a”
+};
+//表达式左侧是 window.onmousedown，因此 TypeScript 会推断赋值表达式右侧函数的参数是事件对象
+```
+
+### 2、类型兼容
+#### 2.1、函数兼容性
+##### 2.1.1、函数参数个数
+>如果对函数 y 进行赋值，那么要求 x 中的每个参数都应在 y 中有对应，也就是 x 的参数个数小于等于 y 的参数个数
+```ts
+let x = (a: number) => 0;
+let y = (b: number, c: string) => 0;
+y = x; // 没问题
+x = y; // error Type '(b: number, s: string) => number' is not assignable to type '(a: number) => number'
+```
+
+##### 2.1.2、函数参数类型
+>除了参数个数，参数的类型需要对应
+```ts
+let x = (a: number) => 0;
+let y = (b: string) => 0;
+let z = (c: string) => false;
+x = y; // error 不能将类型“(b: string) => number”分配给类型“(a: number) => number”。
+x = z; // error 不能将类型“(c: string) => boolean”分配给类型“(a: number) => number”。
+```
+
+##### 2.1.3、剩余参数和可选参数
+>当要被赋值的函数参数中包含剩余参数（…args）时，赋值的函数可以用任意个数参数代替
+```ts
+//剩余参数
+const getNum = ( // 这里定义一个getNum函数，他有两个参数
+  arr: number[], // 第一个参数是一个数组
+  callback: (...args: number[]) => number // 第二个参数是一个函数，这个函数的类型要求可以传入任意多个参数，但是类型必须是数值类型，返回值必须是数值类型
+): number => {
+  return callback(...arr); // 这个getNum函数直接返回调用传入的第二个参数这个函数，以第一个参数这个数组作为参数的函数返回值
+};
+getNum(
+  [1, 2],
+  (...args: number[]): number => args.length // 这里传入一个函数，逻辑是返回参数的个数
+);
+//可选参数
+const getNum = (
+  arr: number[],
+  callback: (arg1: number, arg2?: number) => number // 这里指定第二个参数callback是一个函数，函数的第二个参数为可选参数
+): number => {
+  return callback(...arr); // error 应有 1-2 个参数，但获得的数量大于等于 0
+  //return callback(arr[0], …arr) 这样就没问题了
+};
+```
+
+##### 2.1.4、函数参数双向协议
+>函数参数双向协变即参数类型无需绝对相同  
+>要允许双向协变兼容，需要配置tsconfig.json文件的"strictFunctionTypes"选项为false，默认为false  
+```ts
+let funcA = function(arg: number | string): void {};
+let funcB = function(arg: number): void {};
+// funcA = funcB 和 funcB = funcA都可以
+```
+
+##### 2.1.5、函数返回值类型
+```ts
+let x = (a: number): string | number => 0;
+let y = (b: number) => "a";
+let z = (c: number) => false;
+x = y;
+x = z; // 不能将类型“(c: number) => boolean”分配给类型“(a: number) => string | number”
+```
+
+##### 2.1.6、函数重载
+>带有重载的函数，要求被赋值的函数的每个重载都能在用来赋值的函数上找到对应的签名
+```ts
+function merge(arg1: number, arg2: number): number; // 这是merge函数重载的一部分
+function merge(arg1: string, arg2: string): string; // 这也是merge函数重载的一部分
+function merge(arg1: any, arg2: any) { // 这是merge函数实体
+  return arg1 + arg2;
+}
+function sum(arg1: number, arg2: number): number; // 这是sum函数重载的一部分
+function sum(arg1: any, arg2: any): any { // 这是sum函数实体
+  return arg1 + arg2;
+}
+let func = merge;
+func = sum; // error 不能将类型“(arg1: number, arg2: number) => number”分配给类型“{ (arg1: number, arg2: number): number; (arg1: string, arg2: string): string; }”
+```
+
+#### 2.2、枚举
+>数字枚举成员类型与数字类型互相兼容
+```ts
+enum Status {
+  On,
+  Off
+}
+let s = Status.On;
+s = 1;
+s = 3;
+//虽然Status.On的值是0，但是这里数字枚举成员类型和数值类型互相兼容，所以这里给s赋值为3也没问题
+```
+>不同枚举值之间是不兼容
+```ts
+enum Status {
+  On,
+  Off
+}
+enum Color {
+  White,
+  Black
+}
+let s = Status.On;
+s = Color.White; // error Type 'Color.White' is not assignable to type 'Status'
+```
+>字符串枚举成员类型和字符串类型是不兼容的
+```ts
+enum Status {
+  On = 'on',
+  Off = 'off'
+}
+let s = Status.On
+s = 'Lison' // error 不能将类型“"Lison"”分配给类型“Status”
+```
+
+#### 2.3、类
+>比较两个类类型的值的兼容性时，`只比较实例的成员`，类的`静态成员`和`构造函数`不进行比较
+```ts
+class Animal {
+  static age: number;
+  constructor(public name: string) {}
+}
+class People {
+  static age: string;
+  constructor(public name: string) {}
+}
+class Food {
+  constructor(public name: number) {}
+}
+let a: Animal;
+let p: People;
+let f: Food;
+a = p; // 只比较实例的成员"name"，所以成功
+a = f; // error Type 'Food' is not assignable to type 'Animal'
+```
+>类的私有成员和受保护成员  
+>当检查类的实例兼容性时，如果目标（要被赋值的那个值）类型包含一个私有成员，那么源（用来赋值的值）类型必须包含来自同一个类的这个私有成员，这就允许子类赋值给父类
+```ts
+class Parent {
+  private age: number;
+  constructor() {}
+}
+class Children extends Parent {
+  constructor() {
+    super();
+  }
+}
+class Other {
+  private age: number;
+  constructor() {}
+}
+
+const children: Parent = new Children();
+const other: Parent = new Other(); // 不能将类型“Other”分配给类型“Parent”。类型具有私有属性“age”的单独声明
+```
+
+#### 2.4、泛型
+```ts
+interface Data<T> {}
+let data1: Data<number>;
+let data2: Data<string>;
+
+data1 = data2;
+//接口里没有用到参数 T，所以传入 string 类型还是传入 number 类型并没有影响
+```
+```ts
+interface Data<T> {
+  data: T;
+}
+let data1: Data<number>;
+let data2: Data<string>;
+
+data1 = data2; // error 不能将类型“Data<string>”分配给类型“Data<number>”。不能将类型“string”分配给类型“number”
+```
+
+### 3、类型保护
+```ts
+const valueList = [123, "abc"];
+const getRandomValue = () => {
+  const number = Math.random() * 10; // 这里取一个[0, 10)范围内的随机值
+  if (number < 5) return valueList[0]; // 如果随机数小于5则返回valueList里的第一个值，也就是123
+  else return valueList[1]; // 否则返回"abc"
+};
+const item = getRandomValue();
+if (item.length) {
+  // error 类型“number”上不存在属性“length”
+  console.log(item.length); // error 类型“number”上不存在属性“length”
+} else {
+  console.log(item.toFixed()); // error 类型“string”上不存在属性“toFixed”
+}
+```
+#### 3.1、自定义类型保护
+```ts
+const valueList = [123, 'abc'];
+const getRandomValue = () => {
+  const value = Math.random() * 10; // 这里取一个[0, 10)范围内的随机值
+  if (value < 5) { return valueList[0]; } else { return valueList[1]; } // 否则返回"abc"
+};
+function isString(value: number | string): value is string {
+  return typeof value === 'string';
+}
+const item = getRandomValue();
+if (isString(item)) {
+  console.log(item.length); // 此时item是string类型
+} else {
+  console.log(item.toFixed()); // 此时item是number类型
+}
+```
+
+#### 3.2、typeof 类型保护
+```ts
+const valueList = [123, 'abc'];
+const getRandomValue = () => {
+  const value = Math.random() * 10; // 这里取一个[0, 10)范围内的随机值
+  if (value < 5) { return valueList[0]; } else { return valueList[1]; } // 否则返回"abc"
+};
+const item = getRandomValue();
+if (typeof item === "string") {
+  console.log(item.length);
+} else {
+  console.log(item.toFixed());
+}
+```
+在 TS 中，对 typeof 的处理还有些特殊要求：
+>1、只能使用`=`和`!`两种形式来比较  
+>2、type 只能是`number`、`string`、`boolean`和`symbol`四种类型
+
+#### 3.2、instanceof 类型保护
+>判断一个实例是不是某个构造函数创建的，或者是不是使用 ES6 语法的某个类创建的
+```ts
+class CreateByClass1 {
+  public age = 18;
+  constructor() {}
+}
+class CreateByClass2 {
+  public name = "lison";
+  constructor() {}
+}
+function getRandomItem() {
+  return Math.random() < 0.5 ? new CreateByClass1() : new CreateByClass2(); // 如果随机数小于0.5就返回CreateByClass1的实例，否则返回CreateByClass2的实例
+}
+const item = getRandomItem();
+if (item instanceof CreateByClass1) { // 这里判断item是否是CreateByClass1的实例
+  console.log(item.age);
+} else {
+  console.log(item.name);
+}
+```
+### 4、显式赋值断言
+#### 4.1、严格模式下`null`和`undefined`赋值给其它类型值
+>1、在 tsconfig.json 中将 strictNullChecks 设为 true 后，就不能再将 undefined 和 null 赋值给除它们自身和void 之外的任意类型值了  
+>2、当需要给一个其它类型的值设置初始值为空，然后再进行赋值，这时使用联合类型来实现 null 或 undefined 赋值给其它类型  
+```ts
+let str = "lison";
+str = null; // error 不能将类型“null”分配给类型“string”
+let strNull: string | null = "lison"; // 这里你可以简单理解为，string | null即表示既可以是string类型也可以是null类型
+strNull = null; // right
+strNull = undefined; // error 不能将类型“undefined”分配给类型“string | null”
+```
+
+#### 4.2、可选参数和可选属性
+>如果开启了 strictNullChecks，可选参数会被自动加上`|undefined`
+```ts
+const sum = (x: number, y?: number) => {
+  return x + (y || 0);
+};
+sum(1, 2); // 3
+sum(1); // 1
+sum(1, undefined); // 1
+sum(1, null); // error Argument of type 'null' is not assignable to parameter of type 'number | undefined'
+```
+#### 4.3、显示赋值断言
+```ts
+function getSplicedStr(num: number | null): string {
+  function getRes(prefix: string) { // 这里在函数getSplicedStr里定义一个函数getRes，我们最后调用getSplicedStr返回的值实际是getRes运行后的返回值
+    return prefix + num.toFixed().toString(); // 这里使用参数num，num的类型为number或null，在运行前编译器是无法知道在运行时num参数的实际类型的，所以这里会报错，因为num参数可能为null
+  }
+  num = num || 0.1; // 但是这里进行了赋值，如果num为null则会将0.1赋给num，所以实际调用getRes的时候，getRes里的num拿到的始终不为null
+  return getRes("lison");
+}
+//因为有嵌套函数，而编译器无法去除嵌套函数的 null（除非是立即调用的函数表达式），所以我们需要使用显式赋值断言，写法就是在不为 null 的值后面加个!
+function getSplicedStr(num: number | null): string {
+  function getLength(prefix: string) {
+    return prefix + num!.toFixed().toString();
+  }
+  num = num || 0.1;
+  return getLength("lison");
+}
+```
