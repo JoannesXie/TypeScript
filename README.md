@@ -186,7 +186,7 @@ console.log(obj.name) // error 类型“object”上不存在属性“name”
 >2、因为它的知识比较多，所以单独进行讲解。
 
 ### 2、TS补充的六个类型
-#### 2.1、元组
+#### 2.1、元组(tuple)
 >1、元组可以看做是数组的拓展，它表示已知元素数量和类型的数组  
 >Tips：各个位置上的元素类型都要对应，元素个数也要一致
 ```ts
@@ -1495,3 +1495,437 @@ function getSplicedStr(num: number | null): string {
   return getLength("lison");
 }
 ```
+
+### 5、类型别名&字面量类型
+#### 5.1、类型别名
+>1、给一种类型起个别的名字，之后只要使用这个类型的地方，都可以用这个名字作为类型代替  
+>2、只是起个别名，并不是创建一个新的对象
+```ts
+type TypeString = string;
+let str: TypeString;
+str = 123; // error Type '123' is not assignable to type 'string'
+``` 
+>类型别名也可以使用泛型
+```ts
+type PositionType<T> = { x: T; y: T };
+const position1: PositionType<number> = {
+  x: 1,
+  y: -1
+};
+const position2: PositionType<string> = {
+  x: "right",
+  y: "top"
+}
+```
+>使用类型别名时也可以在属性中引用自己
+```ts
+type Child<T> = {
+  current: T;
+  child?: Child<T>;
+};
+let ccc: Child<string> = {
+  current: "first",
+  child: {
+    // error
+    current: "second",
+    child: {
+      current: "third",
+      child: "test" // 这个地方不符合type，造成最外层child处报错
+    }
+  }
+};
+```
+#### 5.2、字面量类型
+##### 5.2.1、字符串字面量类型
+>字符串字面量类型其实就是字符串常量，与字符串类型不同的是它是具体的值。
+```ts
+type Name = "Lison";
+const name1: Name = "test"; // error 不能将类型“"test"”分配给类型“"Lison"”
+const name2: Name = "Lison";
+//联合类型
+type Direction = "north" | "east" | "south" | "west";
+function getDirectionFirstLetter(direction: Direction) {
+  return direction.substr(0, 1);
+}
+getDirectionFirstLetter("test"); // error 类型“"test"”的参数不能赋给类型“Direction”的参数
+getDirectionFirstLetter("east");
+```
+##### 5.2.2、数字字面量类型
+```ts
+type Age = 18;
+interface Info {
+  name: string;
+  age: Age;
+}
+const info: Info = {
+  name: "Lison",
+  age: 28 // error 不能将类型“28”分配给类型“18”
+};
+```
+
+### 6、可辨识联合
+>把`单例类型`、`联合类型`、`类型保护`和`类型别名`这几种类型进行合并，来创建一个叫做`可辨识联合`的高级类型，它也可称作`标签联合`或`代数数据`类型.  
+
+>1、可辨识联合要求具有两个要素：  
+>a、具有普通的`单例类型属性`（要作为辨识的特征，也是重要因素）。  
+>b、一个类型别名，包含了那些类型的联合（即把几个类型封装为联合类型，并起一个别名）。 
+```ts
+interface Square {
+  kind: "square"; // 这个就是具有辨识性的属性
+  size: number;
+}
+interface Rectangle {
+  kind: "rectangle"; // 这个就是具有辨识性的属性
+  height: number;
+  width: number;
+}
+interface Circle {
+  kind: "circle"; // 这个就是具有辨识性的属性
+  radius: number;
+}
+type Shape = Square | Rectangle | Circle; // 这里使用三个接口组成一个联合类型，并赋给一个别名Shape，组成了一个可辨识联合。
+function getArea(s: Shape) {
+  switch (s.kind) {
+    case "square":
+      return s.size * s.size;
+    case "rectangle":
+      return s.height * s.width;
+    case "circle":
+      return Math.PI * s.radius ** 2; // 2**3=>8 es6幂运算
+  }
+}
+``` 
+
+### 7、索引类型查询&索引访问
+### 7.1、索引类型查询操作符`[keyof]`
+>`keyof操作符`，连接一个类型，会返回一个由这个类型的所有属性名组成的联合类型
+```ts
+interface Info {
+  name: string;
+  age: number;
+}
+let infoProp: keyof Info;
+infoProp = "name";
+infoProp = "age";
+infoProp = "no"; // error 不能将类型“"no"”分配给类型“"name" | "age"”
+//结合泛型使用
+function getValue<T, K extends keyof T>(obj: T, names: K[]): T[K][] { 
+// 这里使用泛型，并且约束泛型变量K的类型是"keyof T"，也就是类型T的所有字段名组成的联合类型
+  return names.map(n => obj[n]); // 指定getValue的返回值类型为T[K][]，即类型为T的值的属性值组成的数组
+}
+const info = {
+  name: "lison",
+  age: 18
+};
+let values: string[] = getValue(info, ["name"]);
+values = getValue(info, ["age"]); // error 不能将类型“number[]”分配给类型“string[]”
+```
+
+### 7.2、索引访问操作符`[]`
+>`[]`，在 TS 中可以用来访问某个属性的类型
+```ts
+interface Info {
+  name: string;
+  age: number;
+}
+type NameType = Info["name"];
+let name: NameType = 123; // error 不能将类型“123”分配给类型“string”
+//泛型
+function getProperty<T, K extends keyof T>(o: T, name: K): T[K] {
+  return o[name]; // o[name] is of type T[K]
+}
+//接口
+interface Obj<T> {
+  [key: string]: T;
+}
+let key: keyof Obj<number>; // keys的类型为number | string
+key = 123; // right
+```
+
+### 8、映射类型
+#### 8.1、基础
+>映射类型，可以用相同的形式去转换旧类型中每个属性
+```ts
+interface Info {
+  age: number;
+}
+type ReadonlyType<T> = { readonly [P in keyof T]: T[P] }; // 这里定义了一个ReadonlyType<T>映射类型
+type ReadonlyInfo = ReadonlyType<Info>;
+let info: ReadonlyInfo = {
+  age: 18
+};
+info.age = 28; // error Cannot assign to 'age' because it is a constant or a read-only property
+
+//创建一个每个属性都是可选属性的接口
+interface Info {
+  age: number;
+}
+type ReadonlyType<T> = { readonly [P in keyof T]?: T[P] };
+type ReadonlyInfo = ReadonlyType<Info>;
+let info: ReadonlyInfo = {};
+```
+>1、这里用到了一个新的操作符 `in`，TS 内部使用了 `for … in`，定义映射类型  
+>>a、`类型变量`(上例中的 P)，它就像 for…in 循环中定义的变量，用来在每次遍历中绑定当前遍历到的属性名；  
+>b、`属性名联合`(上例中keyof T)，它返回对象 T 的属性名联合；  
+>c、属性的结果类型(上例中T[P])。  
+
+>2、TS内置这两种映射类型，无需定义即可使用，它们分别是`Readonly`和`Partial`  
+>3、TS还有两个内置的映射类型分别是`Pick`和`Record`
+```ts
+type Pick<T, K extends keyof T> = { [P in K]: T[P] };
+type Record<K extends keyof any, T> = { [P in K]: T };
+
+//使用一下 Pick
+interface Info {
+  name: string;
+  age: number;
+  address: string;
+}
+const info: Info = {
+  name: "lison",
+  age: 18,
+  address: "beijing"
+};
+function pick<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> { // 这里我们定义一个pick函数，用来返回一个对象中指定字段的值组成的对象
+  let res = {} as Pick<T, K>;
+  keys.forEach(key => {
+    res[key] = obj[key];
+  });
+  return res;
+}
+const nameAndAddress = pick(info, ["name", "address"]); // { name: 'lison', address: 'beijing' }
+
+//Record，它适用于将一个对象中的每一个属性转换为其他值的场景
+function mapObject<K extends string | number, T, U>(
+  obj: Record<K, T>,
+  f: (x: T) => U
+): Record<K, U> {
+  let res = {} as Record<K, U>;
+  for (const key in obj) {
+    res[key] = f(obj[key]);
+  }
+  return res;
+}
+
+const names = { 0: "hello", 1: "world", 2: "bye" };
+const lengths = mapObject(names, s => s.length); // { 0: 5, 1: 5, 2: 3 }
+```
+
+#### 8.2、由映射类型进行推断
+>使用映射类型包装一个类型的属性后，也可以进行逆向操作，也就是拆包      
+
+包装：
+```ts
+type Proxy<T> = { // 这里定义一个映射类型，他将一个属性拆分成get/set方法
+  get(): T;
+  set(value: T): void;
+};
+type Proxify<T> = { [P in keyof T]: Proxy<T[P]> }; // 这里再定义一个映射类型，将一个对象的所有属性值类型都变为Proxy<T>处理之后的类型
+function proxify<T>(obj: T): Proxify<T> { // 这里定义一个proxify函数，用来将对象中所有属性的属性值改为一个包含get和set方法的对象
+  let result = {} as Proxify<T>;
+  for (const key in obj) {
+    result[key] = {
+      get: () => obj[key],
+      set: value => (obj[key] = value)
+    };
+  }
+  return result;
+}
+let props = {
+  name: "lison",
+  age: 18
+};
+let proxyProps = proxify(props);
+console.log(proxyProps.name.get()); // "lison"
+proxyProps.name.set("li");
+```
+拆包：
+```ts
+function unproxify<T>(t: Proxify<T>): T { // 这里我们定义一个拆包函数，其实就是利用每个属性的get方法获取到当前属性值，然后将原本是包含get和set方法的对象改为这个属性值
+  let result = {} as T;
+  for (const k in t) {
+    result[k] = t[k].get(); // 这里通过调用属性值这个对象的get方法获取到属性值，然后赋给这个属性，替换掉这个对象
+  }
+  return result;
+}
+let originalProps = unproxify(proxyProps);
+```
+#### 8.3、增加或移除特定修饰符
+>通过映射类型为一个接口的每个属性增加修饰符
+```ts
+interface Info {
+  name: string;
+  age: number;
+}
+type ReadonlyInfo<T> = { +readonly [P in keyof T]+?: T[P] };
+let info: ReadonlyInfo<Info> = {
+  name: "lison"
+};
+info.name = ""; // error
+```
+>删除修饰符
+```ts
+interface Info {
+  name: string;
+  age: number;
+}
+type RemoveModifier<T> = { -readonly [P in keyof T]-?: T[p] };
+type InfoType = RemoveModifier<Readonly<Partial<Info>>>;
+let info1: InfoType = {
+  // error missing "age"
+  name: "lison"
+};
+let info2: InfoType = {
+  name: "lison",
+  age: 18
+};
+info2.name = ""; // right, can edit
+```
+>TS 内置了一个映射类型`Required<T>`，使用它可以去掉 `T `所有属性的`?`修饰符。
+
+#### 8.4、元组和数组上的映射类型
+>TS 在 3.1 版本中，在元组和数组上的映射类型会生成新的元组和数组，并不会创建一个新的类型，这个类型上会具有 push、pop 等数组方法和数组属性
+```ts
+type MapToPromise<T> = { [K in keyof T]: Promise<T[K]> };
+type Tuple = [number, string, boolean];
+type promiseTuple = MapToPromise<Tuple>;
+let tuple: promiseTuple = [
+  new Promise((resolve, reject) => resolve(1)),
+  new Promise((resolve, reject) => resolve("a")),
+  new Promise((resolve, reject) => resolve(false))
+];
+```
+
+### 9、unkown类型
+#### 9.1、任何类型的值都可以赋值给 unknown 类型
+```ts
+let value1: unknown;
+value1 = "a";
+value1 = 123;
+```
+
+#### 9.2、如果没有类型断言或基于控制流的类型细化时 unknown 不可以赋值给其它类型，此时它只能赋值给 unknown 和 any 类型
+```ts
+let value2: unknown;
+let value3: string = value2; // error 不能将类型“unknown”分配给类型“string”
+value1 = value2;
+```
+
+#### 9.3、如果没有类型断言或基于控制流的类型细化，则不能在它上面进行任何操作
+```ts
+let value4: unknown;
+value4 += 1; // error 对象的类型为 "unknown"
+```
+
+#### 9.4、unknown 与任何其它类型组成的交叉类型，最后都等于其它类型
+```ts
+type type1 = unknown & string; // type1 => string
+type type2 = number & unknown; // type2 => number
+type type3 = unknown & unknown; // type3 => unknown
+type type4 = unknown & string[]; // type4 => string[]
+```
+
+#### 9.5、unknown 与任何其它类型组成的联合类型，都等于 unknown 类型，但只有any例外，unknown与any组成的联合类型等于any)
+```ts
+type type5 = string | unknown; // type5 => unknown
+type type6 = any | unknown; // type6 => any
+type type7 = number[] | unknown; // type7 => unknown
+```
+
+#### 9.6、never 类型是 unknown 的子类型
+```ts
+type type8 = never extends unknown ? true : false; // type8 => true
+```
+
+#### 9.7、keyof unknown 等于类型 never
+```ts
+type type9 = keyof unknown; // type9 => never
+```
+
+#### 9.8、只能对 unknown 进行等或不等操作，不能进行其它操作
+```ts
+value1 === value2;
+value1 !== value2;
+value1 += value2; // error
+```
+
+#### 9.9、unknown 类型的值不能访问其属性、作为函数调用和作为类创建实例
+```ts
+let value5: unknown;
+value5.age; // error
+value5(); // error
+new value5(); // error
+```
+#### 9.10、使用映射类型时如果遍历的是 unknown 类型，则不会映射任何属性
+```ts
+type Types<T> = { [P in keyof T]: number };
+type type10 = Types<any>; // type10 => { [x: string]: number }
+type type11 = Types<unknown>; // type10 => {}
+```
+
+### 10、条件类型
+#### 10.1、基础使用
+>以一个条件表达式进行类型关系检测，然后在后面两种类型中选择一个
+```ts
+type Type<T> = T extends string ? string : number
+let index: Type<'a'> // index的类型为string
+let index2: Type<false> // index2的类型为number
+```
+
+#### 10.2、分布式条件类型
+>当待检测的类型是联合类型，则该条件类型被称为“分布式条件类型”，在实例化时会自动分发成联合类型
+```ts
+type Diff<T, U> = T extends U ? never : T;
+type Test = Diff<string | number | boolean, undefined | number>;
+// Test的类型为string | boolean
+```
+
+#### 10.3、类型推断-infer
+```ts
+type Type<T> = T extends Array<infer U> ? U : T;
+type test = Type<string[]>; // test的类型为string
+type test2 = Type<string>; // test2的类型为string
+```
+
+#### 10.3、预定义条件类型
+#### 10.3.1、Exclude<T, U>，从 T 中去掉可以赋值给 U 的类型：
+```ts
+type Type = Exclude<"a" | "b" | "c", "a" | "b">;
+// Type => 'c'
+type Type2 = Exclude<string | number | boolean, string | number>;
+// Type2 => boolean
+```
+
+#### 10.3.2、Extract<T, U>，选取 T 中可以赋值给 U 的类型：
+```ts
+type Type = Extract<"a" | "b" | "c", "a" | "c" | "f">;
+// Type => 'a' | 'c'
+type Type2 = Extract<number | string | boolean, string | boolean>;
+// Type2 => string | boolean
+```
+
+#### 10.3.3、NonNullable，从 T 中去掉 null 和 undefined：
+```ts
+type Type = Extract<string | number | undefined | null>;
+// Type => string | number
+ReturnType，获取函数类型返回值类型：
+type Type = ReturnType<() => string)>
+// Type => string
+type Type2 = ReturnType<(arg: number) => void)>
+// Type2 => void
+```
+
+#### 10.3.4、InstanceType，获取构造函数类型的实例类型：
+```ts
+class A {
+  constructor() {}
+}
+type T1 = InstanceType<typeof A>; // T1的类型为A
+type T2 = InstanceType<any>; // T2的类型为any
+type T3 = InstanceType<never>; // T3的类型为never
+type T4 = InstanceType<string>; // error
+```
+
+### 11、装饰器
+>装饰器还处于试验阶段，使用装饰器，需要在 `tsconfig.json` 的编译配置中开启`experimentalDecorators`，将它设为 true  
+>暂不做记录，[详情](https://www.imooc.com/read/35/article/362)
