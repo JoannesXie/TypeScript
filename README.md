@@ -13,9 +13,10 @@ npm init -y
 >1、全局安装：`npm i typescript -g`   
 >Tips：a、全局安装后就可以使用`tsc`命令  
 >b、使用`tsc --init `初始化，产生`tsconfig.json`文件  
->c、设置`tsconfig.json`文件中`"lib"` =>`"lib": ["dom", "es6"]`
-```
-tsc --init
+>c、设置`tsconfig.json`文件中`"lib"` =>`"lib": ["dom", "es6"]`。可以使用es6语法。
+```ts
+tsc --init //初始化
+tsc  //在初始化后，使用此命令自动编译文件夹下所有ts文件
 ```  
 >2、局部安装：`npm i typescript -D`   
 >Tips：局部安装是为了配合webpack进行使用
@@ -116,7 +117,7 @@ module.exports = {
 
 ### 1、八个常见类型
 #### 1.1、布尔类型(`boolean`)
->布尔类型的变量的值只能是 true 或 false  
+>布尔类型的变量的值只能是 `true` 或 `false`  
 ```ts
 let bool: boolean = false;
 bool = true;
