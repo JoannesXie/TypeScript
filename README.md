@@ -150,9 +150,9 @@ bool = 123; // error 不能将类型"123"分配给类型"boolean"
 let num: number;
 num = 123;
 num = "123"; // error 不能将类型"123"分配给类型"number"
-num = 0b1111011; //  二进制的123
-num = 0o173; // 八进制的123
-num = 0x7b; // 十六进制的123
+num = 0b1111011; // 0b 二进制的123
+num = 0o173; // 0o 八进制的123
+num = 0x7b; // 0x 十六进制的123
 ```
 
 #### 1.3、字符串类型(`string`)
@@ -284,7 +284,7 @@ const array: any[] = [1, "a", true];
 
 #### 2.4、非任意类型(void)
 
->void 和 any 相反，void 是表示没有任意类型，就是什么类型都不是  
+>void 和 any 相反，void 是表示`没有任意类型`，就是什么类型都不是  
 >void 类型的变量只能赋值为 undefined 和 null，其他类型不能赋值给 void 类型的变量。
 
 ```ts
